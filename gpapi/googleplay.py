@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import time
 
 from base64 import b64decode, urlsafe_b64encode
 from datetime import datetime
@@ -8,7 +9,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 from cryptography.hazmat.primitives.asymmetric import padding
-
+import string
 import requests
 
 from . import googleplay_pb2, config, utils
@@ -36,6 +37,20 @@ REVIEWS_URL = FDFE + "rev"
 
 CONTENT_TYPE_URLENC = "application/x-www-form-urlencoded; charset=UTF-8"
 CONTENT_TYPE_PROTO = "application/x-protobuf"
+
+def get_token(self, offset):
+    code="AEIMQUYcgkosw048"
+    code_suffix="=BCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if offset >= 254:
+        offset += 1
+    i = offset // 16
+    j = offset % 16
+    s = offset // 128
+    if s > 0:
+        i -= 8 * (s-1)
+    key = string.ascii_uppercase[i] + code[j]
+    token = "C" + key + requests.utils.quote(code_suffix[s])
+    return token
 
 
 class LoginError(Exception):
@@ -482,7 +497,7 @@ class GooglePlayAPI(object):
         if nb_results is not None:
             path += "&n={}".format(requests.utils.quote(nb_results))
         if offset is not None:
-            path += "&o={}".format(requests.utils.quote(offset))
+            path += "&ctntkn=" + self.get_token(int(offset))
         data = self.executeRequestApi2(path)
         clusters = []
         docs = []
@@ -667,7 +682,7 @@ class GooglePlayAPI(object):
     def log(self, docid):
         log_request = googleplay_pb2.LogRequest()
         log_request.downloadConfirmationQuery = "confirmFreeDownload?doc=" + docid
-        timestamp = int(datetime.now().timestamp())
+        timestamp = int(time.time())
         log_request.timestamp = timestamp
 
         string_request = log_request.SerializeToString()
