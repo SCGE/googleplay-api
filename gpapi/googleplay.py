@@ -38,21 +38,6 @@ REVIEWS_URL = FDFE + "rev"
 CONTENT_TYPE_URLENC = "application/x-www-form-urlencoded; charset=UTF-8"
 CONTENT_TYPE_PROTO = "application/x-protobuf"
 
-def get_token(self, offset):
-    code="AEIMQUYcgkosw048"
-    code_suffix="=BCDEFGHIJKLMNOPQRSTUVWXYZ"
-    if offset >= 254:
-        offset += 1
-    i = offset // 16
-    j = offset % 16
-    s = offset // 128
-    if s > 0:
-        i -= 8 * (s-1)
-    key = string.ascii_uppercase[i] + code[j]
-    token = "C" + key + requests.utils.quote(code_suffix[s])
-    return token
-
-
 class LoginError(Exception):
     def __init__(self, value):
         self.value = value
@@ -93,6 +78,20 @@ class GooglePlayAPI(object):
 
     def set_timezone(self, timezone):
         self.deviceBuilder.set_timezone(timezone)
+
+    def get_token(self, offset):
+        code="AEIMQUYcgkosw048"
+        code_suffix="=BCDEFGHIJKLMNOPQRSTUVWXYZ"
+        if offset >= 254:
+            offset += 1
+        i = offset // 16
+        j = offset % 16
+        s = offset // 128
+        if s > 0:
+            i -= 8 * (s-1)
+        key = string.ascii_uppercase[i] + code[j]
+        token = "C" + key + requests.utils.quote(code_suffix[s])
+        return token
 
     def encrypt_password(self, login, passwd):
         """Encrypt credentials using the google publickey, with the
